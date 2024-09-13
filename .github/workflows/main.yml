@@ -1,0 +1,39 @@
+name: Auto Sync with Upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 每天凌晨执行一次（UTC时间）
+  push:
+    branches:
+      - main # 触发分支，根据实际情况修改
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: main # 需要同步的分支
+          fetch-depth: 0 # 获取所有历史记录，确保可以拉取所有提交
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "hcllmsx@qq.com"  # 替换为你的实际电子邮件地址
+          git config --global user.name "hcllmsx"        # 替换为你的全名
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/cmliu/edgetunnel.git # 上游仓库地址
+
+      - name: Fetch upstream changes
+        run: git fetch upstream
+
+      - name: Merge upstream changes into main
+        run: git merge upstream/main --allow-unrelated-histories
+
+      - name: Push merged commits to fork
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main # 分支名称
+          force: true # 强制推送以合并所有更改
